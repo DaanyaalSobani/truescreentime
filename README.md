@@ -37,7 +37,8 @@ day selector.*
 
 ## Building
 
-Requirements: JDK 17+ and an Android SDK (compileSdk 35).
+Requirements: JDK 17+ and an Android SDK (compileSdk 35). Setting up from
+scratch on WSL2? See [BUILDING.md](BUILDING.md) for the exact commands.
 
 ```bash
 ./gradlew assembleDebug
