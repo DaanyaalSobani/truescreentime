@@ -54,27 +54,27 @@ mount, and file-watching misbehaves there.
 
 ## 5. Installing on your phone
 
-USB devices aren't visible inside WSL2 by default, so pick one of:
+Simplest flow: copy the APK out of WSL2, get it onto the phone, and tap it —
+Android's package installer does the rest.
 
-- **Wireless debugging (easiest):** on the phone enable Developer options →
-  Wireless debugging, then inside WSL2:
+Copy the APK to your Windows desktop from inside WSL2:
 
-  ```bash
-  sudo apt install -y adb
-  adb pair <phone-ip>:<pairing-port>   # code shown on the phone
-  adb connect <phone-ip>:<port>
-  adb install app/build/outputs/apk/debug/app-debug.apk
-  ```
+```bash
+cp app/build/outputs/apk/debug/app-debug.apk /mnt/c/Users/<you>/Desktop/
+```
 
-- **Windows-side adb:** install platform-tools on Windows and point it at
-  the APK through the WSL share:
+(Or browse to it from Windows Explorer at
+`\\wsl$\Ubuntu\home\<you>\truescreentime\app\build\outputs\apk\debug\`.)
 
-  ```powershell
-  adb install \\wsl$\Ubuntu\home\<you>\truescreentime\app\build\outputs\apk\debug\app-debug.apk
-  ```
+Then transfer it to the phone however is handiest — USB file copy, Google
+Drive, email to yourself, Quick Share — open it in the phone's Files app,
+and tap **Install**. The first time, Android will ask you to allow installs
+from that app (Files/Drive/etc.); after installing, grant Usage Access as
+described in the README.
 
-- **USB passthrough:** `usbipd-win` can attach the phone's USB port to
-  WSL2 if you prefer cabled `adb` from Linux.
+If you later want cable-free installs straight from the build, `adb` over
+wireless debugging works from inside WSL2 (`adb pair` + `adb connect` +
+`adb install`), but it's entirely optional.
 
 ## Troubleshooting
 
