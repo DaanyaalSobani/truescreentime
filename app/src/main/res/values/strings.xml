@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TrueScreenTime</string>
+
+    <string name="permission_title">Usage access needed</string>
+    <string name="permission_explanation">TrueScreenTime reads your device usage statistics to calculate screen time. Android requires you to grant Usage Access from a special settings screen. Tap the button below, find TrueScreenTime in the list, and turn the permission on.</string>
+    <string name="grant_access">Grant Access</string>
+
+    <string name="total_screen_time">Total Screen Time</string>
+    <string name="time_placeholder">0m</string>
+    <string name="show_system_apps">Show system apps</string>
+    <string name="no_usage_data">No usage data in this range</string>
+
+    <string name="range_button_today">Today</string>
+    <string name="range_button_week">This Week</string>
+    <string name="range_button_custom">Custom</string>
+    <string name="range_today">Today</string>
+    <string name="range_since">Since %1$s</string>
+    <string name="range_between">%1$s – %2$s</string>
+    <string name="pick_start_date">Start date</string>
+    <string name="pick_end_date">End date</string>
+
+    <string name="time_hours_minutes">%1$dh %2$02dm</string>
+    <string name="time_minutes">%1$dm</string>
+    <string name="time_seconds">%1$ds</string>
+</resources>
