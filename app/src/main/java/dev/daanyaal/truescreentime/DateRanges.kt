@@ -28,6 +28,8 @@ sealed class DateRange {
     class Custom(override val start: Long, override val end: Long) : DateRange()
 
     companion object {
+        const val DAY_MS = 24L * 60 * 60 * 1000
+
         fun startOfToday(): Long = atMidnight(Calendar.getInstance()).timeInMillis
 
         fun startOfDay(year: Int, month: Int, day: Int): Long {
@@ -37,7 +39,7 @@ sealed class DateRange {
         }
 
         fun endOfDay(year: Int, month: Int, day: Int): Long =
-            startOfDay(year, month, day) + 24L * 60 * 60 * 1000
+            startOfDay(year, month, day) + DAY_MS
 
         private fun atMidnight(cal: Calendar): Calendar {
             cal.set(Calendar.HOUR_OF_DAY, 0)

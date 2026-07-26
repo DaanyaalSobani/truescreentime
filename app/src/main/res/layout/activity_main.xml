@@ -38,96 +38,173 @@
     </LinearLayout>
 
     <!-- Main content -->
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/content_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
+        android:fillViewport="true"
         android:visibility="gone">
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/total_screen_time"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:gravity="center" />
-
-        <TextView
-            android:id="@+id/total_time"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="48sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:text="@string/time_placeholder" />
-
-        <TextView
-            android:id="@+id/range_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:gravity="center" />
-
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/range_toggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="12dp"
-            app:singleSelection="true"
-            app:selectionRequired="true">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_today"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/range_button_today" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_week"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/range_button_week" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/button_custom"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/range_button_custom" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
-
-        <CheckBox
-            android:id="@+id/show_system_apps"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            android:text="@string/show_system_apps" />
-
-        <FrameLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/app_list"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:paddingBottom="16dp" />
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="24dp">
 
             <TextView
-                android:id="@+id/empty_view"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:text="@string/no_usage_data"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:visibility="gone" />
-        </FrameLayout>
-    </LinearLayout>
+                android:layout_marginTop="24dp"
+                android:text="@string/app_name"
+                android:textAppearance="?attr/textAppearanceHeadlineMedium" />
+
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/range_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_today"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/range_button_today" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_week"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/range_button_week" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_custom"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/range_button_custom" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
+
+            <!-- Donut card (Today / Custom), like the Wellbeing home screen -->
+            <FrameLayout
+                android:id="@+id/donut_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_card"
+                android:padding="12dp">
+
+                <dev.daanyaal.truescreentime.DonutChartView
+                    android:id="@+id/donut_chart"
+                    android:layout_width="match_parent"
+                    android:layout_height="300dp" />
+            </FrameLayout>
+
+            <!-- Week card, like the Wellbeing "App activity details" screen -->
+            <LinearLayout
+                android:id="@+id/week_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:padding="20dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/week_total"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textSize="36sp"
+                    android:textStyle="bold"
+                    android:text="@string/time_placeholder" />
+
+                <TextView
+                    android:id="@+id/week_subtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <dev.daanyaal.truescreentime.WeeklyBarChartView
+                    android:id="@+id/week_chart"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginTop="20dp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageButton
+                        android:id="@+id/prev_day"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_chevron_left"
+                        app:tint="?attr/colorOnSurfaceVariant"
+                        android:contentDescription="@string/prev_day" />
+
+                    <TextView
+                        android:id="@+id/day_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="20dp"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                    <ImageButton
+                        android:id="@+id/next_day"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:src="@drawable/ic_chevron_right"
+                        app:tint="?attr/colorOnSurfaceVariant"
+                        android:contentDescription="@string/next_day" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/show_system_apps"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/show_system_apps" />
+
+            <!-- App list card -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_card"
+                android:paddingVertical="8dp">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/app_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:id="@+id/empty_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="32dp"
+                    android:text="@string/no_usage_data"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:visibility="gone" />
+            </FrameLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 </FrameLayout>
