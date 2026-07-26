@@ -4,11 +4,24 @@ A minimal Android app (Kotlin + XML layouts, no Compose) that reads device
 usage statistics and lets you build a **custom screen time total** by
 including/excluding individual apps.
 
+## Screenshots
+
+<img src="screenshots/today-donut.png" width="320" alt="Today view: donut chart with per-app segments, the filtered total in the center, and the app list with include/exclude checkboxes below" />
+
+*Today view — Digital-Wellbeing-style donut with the filtered total in the
+center. Unchecking an app (here WhatsApp) removes it from the chart and the
+total instantly. "This Week" switches to a weekly bar chart with a tappable
+day selector.*
+
 ## Features
 
 - **Accurate foreground time** — reconstructed from `UsageEvents`
   (`MOVE_TO_FOREGROUND` / `MOVE_TO_BACKGROUND` / `ACTIVITY_STOPPED`) rather
   than the pre-bucketed `queryUsageStats()` totals.
+- **Wellbeing-style charts** — a donut chart of your included apps with the
+  filtered total in the center (Today/Custom), and a weekly bar chart with
+  hour gridlines and a tappable day selector (This Week). Both are small
+  custom `View`s — no chart library.
 - **Date ranges** — Today, This Week (Monday-based), or a custom start/end
   date picked from calendar dialogs.
 - **Filterable app list** — every app with usage in the range is listed with
