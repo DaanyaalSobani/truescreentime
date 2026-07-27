@@ -45,8 +45,8 @@ class UsageStatsRepository(private val context: Context) {
      * Reconstructs foreground time per package inside [rangeStart, rangeEnd].
      *
      * The event query starts a few hours before rangeStart so a session that
-     * was already in the foreground at rangeStart still gets counted; every
-     * accumulated slice is clamped to the requested range.
+     * was already in the foreground at rangeStart still gets counted; the
+     * clamping to the requested range happens in [ForegroundSessionReplay].
      */
     fun queryForegroundTimes(rangeStart: Long, rangeEnd: Long): Map<String, Long> {
         val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
@@ -54,51 +54,23 @@ class UsageStatsRepository(private val context: Context) {
         val effectiveEnd = minOf(rangeEnd, now)
         if (effectiveEnd <= rangeStart) return emptyMap()
 
-        val lookback = rangeStart - LOOKBACK_MS
-        val events = usm.queryEvents(lookback, effectiveEnd)
-
-        val totals = HashMap<String, Long>()
-        // Per package: the set of activity classes currently resumed, and the
-        // timestamp at which the package first came to the foreground.
-        val resumedClasses = HashMap<String, MutableSet<String>>()
-        val foregroundSince = HashMap<String, Long>()
+        val events = usm.queryEvents(rangeStart - LOOKBACK_MS, effectiveEnd)
+        val projected = ArrayList<ForegroundEvent>()
         val event = UsageEvents.Event()
-
-        fun accumulate(pkg: String, from: Long, to: Long) {
-            val start = maxOf(from, rangeStart)
-            val end = minOf(to, effectiveEnd)
-            if (end > start) totals[pkg] = (totals[pkg] ?: 0L) + (end - start)
-        }
-
         while (events.hasNextEvent()) {
             events.getNextEvent(event)
             val pkg = event.packageName ?: continue
-            val cls = event.className ?: pkg
-            when (event.eventType) {
-                UsageEvents.Event.MOVE_TO_FOREGROUND -> { // == ACTIVITY_RESUMED
-                    val classes = resumedClasses.getOrPut(pkg) { HashSet() }
-                    if (classes.isEmpty()) foregroundSince[pkg] = event.timeStamp
-                    classes.add(cls)
-                }
+            val type = when (event.eventType) {
+                UsageEvents.Event.MOVE_TO_FOREGROUND -> // == ACTIVITY_RESUMED
+                    ForegroundEvent.Type.RESUMED
                 UsageEvents.Event.MOVE_TO_BACKGROUND, // == ACTIVITY_PAUSED
-                ACTIVITY_STOPPED -> {
-                    val classes = resumedClasses[pkg] ?: continue
-                    // Removing by class name keeps this idempotent when both
-                    // PAUSED and STOPPED arrive for the same activity.
-                    if (classes.remove(cls) && classes.isEmpty()) {
-                        foregroundSince.remove(pkg)?.let { since ->
-                            accumulate(pkg, since, event.timeStamp)
-                        }
-                    }
-                }
+                ACTIVITY_STOPPED ->
+                    ForegroundEvent.Type.PAUSED_OR_STOPPED
+                else -> continue
             }
+            projected += ForegroundEvent(pkg, event.className, type, event.timeStamp)
         }
-
-        // Anything still in the foreground when the range ends.
-        for ((pkg, since) in foregroundSince) {
-            accumulate(pkg, since, effectiveEnd)
-        }
-        return totals
+        return ForegroundSessionReplay.replay(projected, rangeStart, effectiveEnd)
     }
 
     /** Resolves labels/icons and system-app status, sorted by time descending. */
