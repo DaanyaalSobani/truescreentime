@@ -56,9 +56,7 @@ class MainActivity : AppCompatActivity() {
     private var rangeList: List<AppUsage> = emptyList()
     private var weekLists: List<List<AppUsage>> = emptyList()
     private var weekDayStarts = LongArray(0)
-    private var selectedDayIndex = 0
-    private var weekOffset = 0 // whole weeks back from the current one
-    private var pendingSelection: Int? = null // day to select after a week change
+    private var weekPosition = WeekPosition(0, 0)
     private var suppressToggleListener = false
     private var loadJob: Job? = null
 
@@ -128,8 +126,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         weekChart.onDaySelected = { index -> selectDay(index) }
-        prevDayButton.setOnClickListener { selectDay(selectedDayIndex - 1) }
-        nextDayButton.setOnClickListener { selectDay(selectedDayIndex + 1) }
+        prevDayButton.setOnClickListener { stepDay(-1) }
+        nextDayButton.setOnClickListener { stepDay(1) }
 
         rangeToggle.check(R.id.button_today)
         rangeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
@@ -141,8 +139,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.button_week -> {
                     mode = Mode.WEEK
-                    weekOffset = 0
-                    pendingSelection = null
+                    // Start on today, in the current week.
+                    weekPosition = WeekNavigator.positionOf(
+                        DateRange.startOfToday(), DateRange.ThisWeek.start
+                    )
                     loadData()
                 }
                 R.id.button_custom -> pickCustomRange()
@@ -175,77 +175,62 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 Mode.WEEK -> {
-                    val monday = DateRange.ThisWeek.start -
-                        weekOffset * 7L * DateRange.DAY_MS
-                    val starts = LongArray(7) { monday + it * DateRange.DAY_MS }
+                    val starts = WeekNavigator.weekDayStarts(
+                        DateRange.ThisWeek.start, weekPosition.weekOffset
+                    )
                     weekDayStarts = starts
                     weekLists = withContext(Dispatchers.IO) {
                         starts.map { dayStart ->
                             repository.loadAppUsages(dayStart, dayStart + DateRange.DAY_MS)
                         }
                     }
-                    selectedDayIndex =
-                        (pendingSelection ?: latestSelectableIndex())
-                            .coerceIn(0, latestSelectableIndex())
-                    pendingSelection = null
                 }
             }
             refreshDisplayedData()
         }
     }
 
-    /**
-     * Last day of the shown week the user may select: today in the current
-     * week, Sunday in any earlier week (no selecting days in the future).
-     */
-    private fun latestSelectableIndex(): Int {
-        if (weekDayStarts.isEmpty()) return 0
-        val today = DateRange.startOfToday()
-        return ((today - weekDayStarts[0]) / DateRange.DAY_MS).toInt().coerceIn(0, 6)
+    /** Steps the selection a day at a time, rolling between weeks. */
+    private fun stepDay(deltaDays: Int) {
+        applyPosition(
+            WeekNavigator.step(
+                weekPosition, deltaDays, DateRange.ThisWeek.start, DateRange.startOfToday()
+            )
+        )
     }
 
-    /**
-     * Moves the day selection, rolling into the neighbouring week when it
-     * runs off either end so the chevrons never dead-end mid-history.
-     */
+    /** Selects a day within the week currently on screen (bar taps). */
     private fun selectDay(index: Int) {
-        when {
-            index < 0 -> {
-                weekOffset += 1
-                pendingSelection = 6 // Sunday of the earlier week
-                loadData()
-            }
-            index > latestSelectableIndex() -> {
-                if (weekOffset > 0) {
-                    weekOffset -= 1
-                    pendingSelection = 0 // Monday of the later week
-                    loadData()
-                }
-                // Already at today: nothing newer to show.
-            }
-            else -> {
-                selectedDayIndex = index
-                refreshDisplayedData()
-            }
+        val candidate = weekPosition.copy(dayIndex = index)
+        if (WeekNavigator.isSelectable(
+                candidate, DateRange.ThisWeek.start, DateRange.startOfToday()
+            )
+        ) {
+            applyPosition(candidate)
         }
+    }
+
+    /** Reloads only when the week changed; otherwise redraws from cache. */
+    private fun applyPosition(position: WeekPosition) {
+        val weekChanged = position.weekOffset != weekPosition.weekOffset
+        weekPosition = position
+        if (weekChanged) loadData() else refreshDisplayedData()
     }
 
     /** Re-applies filters to cached data and redraws totals, charts, list. */
     private fun refreshDisplayedData() {
-        val showSystem = filterStore.showSystemApps
+        val selectedDayIndex = weekPosition.dayIndex
         val currentList = if (mode == Mode.WEEK) {
             weekLists.getOrElse(selectedDayIndex) { emptyList() }
         } else {
             rangeList
         }
-        val inRange = if (showSystem) currentList else currentList.filter { !it.isSystem }
-        val included = inRange.filter { filterStore.isIncluded(it.packageName) }
-        // Excluded apps drop out of the list entirely unless asked for.
-        val visible = if (filterStore.showExcludedApps) inRange else included
-        adapter.submitList(visible)
-        emptyView.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
+        val filtered = filter(currentList)
+        adapter.submitList(filtered.visible)
+        emptyView.visibility = if (filtered.visible.isEmpty()) View.VISIBLE else View.GONE
 
-        val totalText = TimeFormat.format(this, included.sumOf { it.totalTimeMs })
+        val included = filtered.included
+        val totalText = TimeFormat.format(this, filtered.totalMs)
         donutCard.visibility = View.VISIBLE
 
         if (mode == Mode.WEEK) {
@@ -261,9 +246,7 @@ class MainActivity : AppCompatActivity() {
             dayLabelView.text = formatDay(selectedDayIndex, "EEE, MMM d")
 
             val barValues = LongArray(7) { day ->
-                weekLists.getOrElse(day) { emptyList() }
-                    .filter { (showSystem || !it.isSystem) && filterStore.isIncluded(it.packageName) }
-                    .sumOf { it.totalTimeMs }
+                filter(weekLists.getOrElse(day) { emptyList() }).totalMs
             }
             val dayLabels = weekDayStarts.map {
                 SimpleDateFormat("EEE", Locale.getDefault()).format(Date(it))
@@ -272,8 +255,9 @@ class MainActivity : AppCompatActivity() {
 
             // Back is always possible; forward stops once we reach today.
             prevDayButton.isEnabled = true
-            nextDayButton.isEnabled =
-                weekOffset > 0 || selectedDayIndex < latestSelectableIndex()
+            nextDayButton.isEnabled = WeekNavigator.canStepForward(
+                weekPosition, DateRange.ThisWeek.start, DateRange.startOfToday()
+            )
             prevDayButton.alpha = 1f
             nextDayButton.alpha = if (nextDayButton.isEnabled) 1f else 0.3f
 
@@ -290,6 +274,13 @@ class MainActivity : AppCompatActivity() {
             updateDonut(title, totalText, included)
         }
     }
+
+    private fun filter(apps: List<AppUsage>): FilteredApps = AppListFilter.apply(
+        apps,
+        showSystemApps = filterStore.showSystemApps,
+        showExcludedApps = filterStore.showExcludedApps,
+        isIncluded = filterStore::isIncluded,
+    )
 
     /** Top apps as donut segments, with the remainder folded into "Other". */
     private fun updateDonut(title: String, totalText: String, included: List<AppUsage>) {

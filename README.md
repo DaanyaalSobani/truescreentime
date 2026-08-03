@@ -6,16 +6,15 @@ including/excluding individual apps.
 
 ## Screenshots
 
-| Today view | This Week | Per-app weekly detail |
-|---|---|---|
-| <img src="screenshots/today-donut.png" width="250" alt="Today view: donut chart with per-app segments, the filtered total in the center, and the app list with include/exclude checkboxes below" /> | <img src="screenshots/week-view.png" width="250" alt="This Week view: daily bar chart with the selected day highlighted, chevrons to change day, and the app list below" /> | <img src="screenshots/app-week-detail.png" width="250" alt="Per-app detail: WhatsApp weekly bar chart with daily bars, a selected-day readout, and chevron buttons to change week" /> |
+| Today view | This Week |
+|---|---|
+| <img src="screenshots/today-donut.png" width="300" alt="Today view: donut chart with per-app segments, the filtered total in the center, and the app list with include/exclude checkboxes below" /> | <img src="screenshots/week-view.png" width="300" alt="This Week view: daily bar chart with the selected day highlighted, chevrons to change day, and a donut for the selected day below" /> |
+| Donut of the apps counting toward your total, with the filtered total in the center. Unchecking an app removes it instantly. | A day-by-day bar chart; tap a bar (or use the chevrons, which roll into neighbouring weeks) to get that day's donut and app list. |
 
-*Left: Digital-Wellbeing-style donut with the filtered total in the center —
-unchecking an app removes it from the chart and total instantly. Middle:
-This Week shows a day-by-day bar chart; tap a bar (or use the chevrons,
-which roll into neighbouring weeks) to see that day's donut and app list.
-Right: tap any app's icon for its own weekly chart, with chevrons stepping
-a week at a time.*
+| Per-app weekly detail | Excluded apps |
+|---|---|
+| <img src="screenshots/app-week-detail.png" width="300" alt="Per-app detail: WhatsApp weekly bar chart with daily bars, a selected-day readout, and chevron buttons to change week" /> | <img src="screenshots/excluded-apps.png" width="300" alt="Excluded apps screen listing excluded packages with checkboxes and a Restore all button" /> |
+| Tap any app's icon for its own weekly chart — tap a bar for that day's exact time, and step whole weeks with the chevrons. | Everything you have excluded, restorable one by one or all at once. Excluded apps stay out of the list and the total. |
 
 ## Features
 
@@ -42,6 +41,21 @@ a week at a time.*
 - **Usage access flow** — if `PACKAGE_USAGE_STATS` isn't granted, the app
   shows an explanation and a **Grant Access** button that deep-links to
   `Settings.ACTION_USAGE_ACCESS_SETTINGS`.
+
+## Tests
+
+`./gradlew testDebugUnitTest` — everything runs on the JVM in about a
+minute; no device or emulator involved. GitHub Actions runs this job on
+every push, and the APK is only built if it passes.
+
+| Layer | What it covers |
+|---|---|
+| Pure logic | `ForegroundSessionReplay` (session reconstruction from usage events), `WeekNavigator` (day/week stepping), `AppListFilter` (system/excluded filtering and totals), `DateRange` (midnight and week boundaries) |
+| Robolectric | `FilterStore` against real `SharedPreferences`, and a smoke test that launches every activity to catch inflation or view-binding failures the compiler cannot see |
+
+The pattern is deliberate: logic that used to live inside the activities is
+extracted into plain Kotlin objects, so the interesting behaviour is
+testable without an emulator and the activities stay thin.
 
 ## Building
 
