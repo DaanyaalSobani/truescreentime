@@ -56,6 +56,29 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 Then open the app and tap **Grant Access** to enable Usage Access.
 
+## Granting Usage Access (sideloaded apps on Android 13+)
+
+Because the app is sideloaded, Android gates Usage Access behind
+"restricted settings" and the first attempt is denied. The full flow:
+
+| 1. Tap Grant Access | 2. First attempt is denied | 3. Allow restricted settings | 4. Turn the toggle on |
+|---|---|---|---|
+| <img src="screenshots/permission-1-grant-access.png" width="200" alt="App screen asking for usage access with a Grant Access button" /> | <img src="screenshots/permission-2-denied-dialog.png" width="200" alt="System dialog: App was denied access to this restricted permission" /> | <img src="screenshots/permission-3-allow-restricted.png" width="200" alt="App info screen with Allow restricted settings in the overflow menu" /> | <img src="screenshots/permission-4-usage-toggle.png" width="200" alt="App usage data screen with the Permit access toggle" /> |
+
+Step by step:
+
+1. Open TrueScreenTime and tap **Grant Access** — it deep-links to the
+   Usage Access settings, but the toggle is blocked at first ("App was
+   denied access").
+2. Go to **Settings → Apps → TrueScreenTime**, open the **⋮** overflow
+   menu in the top-right, and tap **Allow restricted settings**
+   (you may be asked to authenticate).
+3. Return to the app, tap **Grant Access** again, and enable
+   **Permit access to app usage data**.
+
+The grant is remembered until the app is uninstalled. The app never
+leaves the device with this data — everything stays local.
+
 - minSdk 24 (Android 7.0), targetSdk/compileSdk 35 (Android 15)
 - Dependencies: AndroidX core/appcompat/recyclerview/lifecycle, Material
   Components, Kotlin coroutines — nothing else.
