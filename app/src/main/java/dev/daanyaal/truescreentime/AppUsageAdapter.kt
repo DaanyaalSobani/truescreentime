@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 class AppUsageAdapter(
     private val filterStore: FilterStore,
-    private val onInclusionChanged: () -> Unit,
+    private val onInclusionChanged: (AppUsage, Boolean) -> Unit,
     private val onAppClicked: (AppUsage) -> Unit,
 ) : RecyclerView.Adapter<AppUsageAdapter.ViewHolder>() {
 
@@ -43,7 +43,7 @@ class AppUsageAdapter(
         holder.include.isChecked = filterStore.isIncluded(item.packageName)
         holder.include.setOnCheckedChangeListener { _, checked ->
             filterStore.setIncluded(item.packageName, checked)
-            onInclusionChanged()
+            onInclusionChanged(item, checked)
         }
         // Tapping anywhere on the row toggles inclusion too;
         // tapping the icon opens the per-app weekly detail.

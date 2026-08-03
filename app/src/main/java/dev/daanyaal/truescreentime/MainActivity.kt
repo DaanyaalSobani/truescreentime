@@ -9,6 +9,7 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -46,6 +47,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var emptyView: TextView
     private lateinit var rangeToggle: MaterialButtonToggleGroup
     private lateinit var showSystemCheckBox: CheckBox
+    private lateinit var showExcludedCheckBox: CheckBox
 
     private var mode = Mode.TODAY
     private var customStart = 0L
@@ -82,6 +84,7 @@ class MainActivity : AppCompatActivity() {
         emptyView = findViewById(R.id.empty_view)
         rangeToggle = findViewById(R.id.range_toggle)
         showSystemCheckBox = findViewById(R.id.show_system_apps)
+        showExcludedCheckBox = findViewById(R.id.show_excluded_apps)
 
         findViewById<Button>(R.id.grant_access_button).setOnClickListener {
             startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
@@ -89,7 +92,18 @@ class MainActivity : AppCompatActivity() {
 
         adapter = AppUsageAdapter(
             filterStore,
-            onInclusionChanged = { refreshDisplayedData() },
+            onInclusionChanged = { app, included ->
+                // Excluding hides the row unless excluded apps are shown,
+                // so say where it went.
+                if (!included && !filterStore.showExcludedApps) {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.excluded_toast, app.label),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                refreshDisplayedData()
+            },
             onAppClicked = { app -> AppDetailActivity.launch(this, app) },
         )
         val recycler = findViewById<RecyclerView>(R.id.app_list)
@@ -101,6 +115,16 @@ class MainActivity : AppCompatActivity() {
         showSystemCheckBox.setOnCheckedChangeListener { _, checked ->
             filterStore.showSystemApps = checked
             refreshDisplayedData()
+        }
+
+        showExcludedCheckBox.isChecked = filterStore.showExcludedApps
+        showExcludedCheckBox.setOnCheckedChangeListener { _, checked ->
+            filterStore.showExcludedApps = checked
+            refreshDisplayedData()
+        }
+
+        findViewById<Button>(R.id.manage_excluded).setOnClickListener {
+            ExcludedAppsActivity.launch(this)
         }
 
         weekChart.onDaySelected = { index -> selectDay(index) }
@@ -214,15 +238,17 @@ class MainActivity : AppCompatActivity() {
         } else {
             rangeList
         }
-        val visible = if (showSystem) currentList else currentList.filter { !it.isSystem }
+        val inRange = if (showSystem) currentList else currentList.filter { !it.isSystem }
+        val included = inRange.filter { filterStore.isIncluded(it.packageName) }
+        // Excluded apps drop out of the list entirely unless asked for.
+        val visible = if (filterStore.showExcludedApps) inRange else included
         adapter.submitList(visible)
         emptyView.visibility = if (visible.isEmpty()) View.VISIBLE else View.GONE
 
-        val included = visible.filter { filterStore.isIncluded(it.packageName) }
         val totalText = TimeFormat.format(this, included.sumOf { it.totalTimeMs })
+        donutCard.visibility = View.VISIBLE
 
         if (mode == Mode.WEEK) {
-            donutCard.visibility = View.GONE
             weekCard.visibility = View.VISIBLE
 
             weekTotalView.text = totalText
@@ -250,25 +276,32 @@ class MainActivity : AppCompatActivity() {
                 weekOffset > 0 || selectedDayIndex < latestSelectableIndex()
             prevDayButton.alpha = 1f
             nextDayButton.alpha = if (nextDayButton.isEnabled) 1f else 0.3f
+
+            // The donut follows whichever bar is selected.
+            updateDonut(relativeDayLabel(selectedDayIndex), totalText, included)
         } else {
             weekCard.visibility = View.GONE
-            donutCard.visibility = View.VISIBLE
 
             val title = if (mode == Mode.TODAY) {
                 getString(R.string.range_today)
             } else {
                 customRangeLabel()
             }
-            val segments = mutableListOf<DonutChartView.Segment>()
-            for (app in included.take(4)) {
-                segments += DonutChartView.Segment(app.label, app.totalTimeMs)
-            }
-            val otherMs = included.drop(4).sumOf { it.totalTimeMs }
-            if (otherMs > 0) {
-                segments += DonutChartView.Segment(getString(R.string.other), otherMs)
-            }
-            donutChart.setData(segments, title, totalText)
+            updateDonut(title, totalText, included)
         }
+    }
+
+    /** Top apps as donut segments, with the remainder folded into "Other". */
+    private fun updateDonut(title: String, totalText: String, included: List<AppUsage>) {
+        val segments = mutableListOf<DonutChartView.Segment>()
+        for (app in included.take(4)) {
+            segments += DonutChartView.Segment(app.label, app.totalTimeMs)
+        }
+        val otherMs = included.drop(4).sumOf { it.totalTimeMs }
+        if (otherMs > 0) {
+            segments += DonutChartView.Segment(getString(R.string.other), otherMs)
+        }
+        donutChart.setData(segments, title, totalText)
     }
 
     private fun relativeDayLabel(index: Int): String {

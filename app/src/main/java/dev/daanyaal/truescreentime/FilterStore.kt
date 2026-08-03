@@ -4,8 +4,8 @@ import android.content.Context
 
 /**
  * Persists which apps are excluded from the total, plus the
- * "show system apps" preference. Default: every app included,
- * system apps hidden.
+ * "show system apps" / "show excluded apps" preferences. Default: every
+ * app included, system and excluded apps hidden from the list.
  */
 class FilterStore(context: Context) {
 
@@ -14,6 +14,10 @@ class FilterStore(context: Context) {
     var showSystemApps: Boolean
         get() = prefs.getBoolean(KEY_SHOW_SYSTEM, false)
         set(value) = prefs.edit().putBoolean(KEY_SHOW_SYSTEM, value).apply()
+
+    var showExcludedApps: Boolean
+        get() = prefs.getBoolean(KEY_SHOW_EXCLUDED, false)
+        set(value) = prefs.edit().putBoolean(KEY_SHOW_EXCLUDED, value).apply()
 
     fun isIncluded(packageName: String): Boolean =
         packageName !in excludedPackages()
@@ -25,11 +29,17 @@ class FilterStore(context: Context) {
         prefs.edit().putStringSet(KEY_EXCLUDED, updated).apply()
     }
 
-    private fun excludedPackages(): Set<String> =
+    fun excludedPackages(): Set<String> =
         prefs.getStringSet(KEY_EXCLUDED, emptySet()) ?: emptySet()
+
+    /** Clears the whole exclusion list — every app counts again. */
+    fun includeAll() {
+        prefs.edit().putStringSet(KEY_EXCLUDED, emptySet()).apply()
+    }
 
     private companion object {
         const val KEY_EXCLUDED = "excluded_packages"
         const val KEY_SHOW_SYSTEM = "show_system_apps"
+        const val KEY_SHOW_EXCLUDED = "show_excluded_apps"
     }
 }

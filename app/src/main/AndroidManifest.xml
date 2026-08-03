@@ -33,5 +33,9 @@
         <activity
             android:name=".AppDetailActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".ExcludedAppsActivity"
+            android:exported="false" />
     </application>
 </manifest>

@@ -6,15 +6,16 @@ including/excluding individual apps.
 
 ## Screenshots
 
-| Today view | Per-app weekly detail |
-|---|---|
-| <img src="screenshots/today-donut.png" width="300" alt="Today view: donut chart with per-app segments, the filtered total in the center, and the app list with include/exclude checkboxes below" /> | <img src="screenshots/app-week-detail.png" width="300" alt="Per-app detail: WhatsApp weekly bar chart with daily bars, a selected-day readout, and chevron buttons to change week" /> |
+| Today view | This Week | Per-app weekly detail |
+|---|---|---|
+| <img src="screenshots/today-donut.png" width="250" alt="Today view: donut chart with per-app segments, the filtered total in the center, and the app list with include/exclude checkboxes below" /> | <img src="screenshots/week-view.png" width="250" alt="This Week view: daily bar chart with the selected day highlighted, chevrons to change day, and the app list below" /> | <img src="screenshots/app-week-detail.png" width="250" alt="Per-app detail: WhatsApp weekly bar chart with daily bars, a selected-day readout, and chevron buttons to change week" /> |
 
 *Left: Digital-Wellbeing-style donut with the filtered total in the center —
-unchecking an app removes it from the chart and total instantly; "This Week"
-switches to a weekly bar chart with a tappable day selector. Right: tap any
-app's icon for its own weekly chart — tap a bar for that day's exact time,
-and step between weeks with the chevrons.*
+unchecking an app removes it from the chart and total instantly. Middle:
+This Week shows a day-by-day bar chart; tap a bar (or use the chevrons,
+which roll into neighbouring weeks) to see that day's donut and app list.
+Right: tap any app's icon for its own weekly chart, with chevrons stepping
+a week at a time.*
 
 ## Features
 
@@ -30,8 +31,12 @@ and step between weeks with the chevrons.*
 - **Filterable app list** — every app with usage in the range is listed with
   its icon, name, and time, sorted descending. A checkbox on each row
   includes/excludes it from the big total, which updates live.
-- **Persistent filters** — inclusion choices and the "show system apps"
-  toggle are stored in `SharedPreferences`.
+- **Exclusion list** — unchecking an app hides it from the list and leaves
+  it out of the total. A dedicated **Excluded** screen lists everything you
+  have excluded so you can restore apps individually or all at once, and a
+  "Show excluded apps" toggle brings them back inline.
+- **Persistent filters** — inclusion choices and the "show system apps" /
+  "show excluded apps" toggles are stored in `SharedPreferences`.
 - **System app toggle** — system apps and the launcher are hidden by default
   to reduce clutter.
 - **Usage access flow** — if `PACKAGE_USAGE_STATS` isn't granted, the app

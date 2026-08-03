@@ -91,21 +91,6 @@
                     android:text="@string/range_button_custom" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
-            <!-- Donut card (Today / Custom), like the Wellbeing home screen -->
-            <FrameLayout
-                android:id="@+id/donut_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_card"
-                android:padding="12dp">
-
-                <dev.daanyaal.truescreentime.DonutChartView
-                    android:id="@+id/donut_chart"
-                    android:layout_width="match_parent"
-                    android:layout_height="300dp" />
-            </FrameLayout>
-
             <!-- Week card, like the Wellbeing "App activity details" screen -->
             <LinearLayout
                 android:id="@+id/week_card"
@@ -185,12 +170,55 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <CheckBox
-                android:id="@+id/show_system_apps"
-                android:layout_width="wrap_content"
+            <!-- Donut card: the whole range (Today / Custom) or, in week
+                 mode, whichever day is selected on the bar chart -->
+            <FrameLayout
+                android:id="@+id/donut_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_card"
+                android:padding="12dp">
+
+                <dev.daanyaal.truescreentime.DonutChartView
+                    android:id="@+id/donut_chart"
+                    android:layout_width="match_parent"
+                    android:layout_height="300dp" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="@string/show_system_apps" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <CheckBox
+                        android:id="@+id/show_system_apps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/show_system_apps" />
+
+                    <CheckBox
+                        android:id="@+id/show_excluded_apps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/show_excluded_apps" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/manage_excluded"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/manage_excluded" />
+            </LinearLayout>
 
             <!-- App list card -->
             <FrameLayout

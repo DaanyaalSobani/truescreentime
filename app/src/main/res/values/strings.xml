@@ -8,6 +8,13 @@
 
     <string name="time_placeholder">0 min</string>
     <string name="show_system_apps">Show system apps</string>
+    <string name="show_excluded_apps">Show excluded apps</string>
+    <string name="manage_excluded">Excluded</string>
+    <string name="excluded_toast">%1$s excluded — tap Excluded to restore it</string>
+    <string name="excluded_apps_title">Excluded apps</string>
+    <string name="excluded_apps_hint">These apps are hidden from the list and left out of your total. Uncheck one to count it again.</string>
+    <string name="no_excluded_apps">No excluded apps yet.\nUncheck an app in the list to exclude it.</string>
+    <string name="restore_all">Restore all</string>
     <string name="no_usage_data">No usage data in this range</string>
     <string name="other">Other</string>
     <string name="yesterday">Yesterday</string>
