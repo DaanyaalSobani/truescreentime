@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var weekCard: View
     private lateinit var weekTotalView: TextView
     private lateinit var weekSubtitleView: TextView
+    private lateinit var weekRangeView: TextView
     private lateinit var weekChart: WeeklyBarChartView
     private lateinit var dayLabelView: TextView
     private lateinit var prevDayButton: ImageButton
@@ -54,6 +55,8 @@ class MainActivity : AppCompatActivity() {
     private var weekLists: List<List<AppUsage>> = emptyList()
     private var weekDayStarts = LongArray(0)
     private var selectedDayIndex = 0
+    private var weekOffset = 0 // whole weeks back from the current one
+    private var pendingSelection: Int? = null // day to select after a week change
     private var suppressToggleListener = false
     private var loadJob: Job? = null
 
@@ -71,6 +74,7 @@ class MainActivity : AppCompatActivity() {
         weekCard = findViewById(R.id.week_card)
         weekTotalView = findViewById(R.id.week_total)
         weekSubtitleView = findViewById(R.id.week_subtitle)
+        weekRangeView = findViewById(R.id.week_range)
         weekChart = findViewById(R.id.week_chart)
         dayLabelView = findViewById(R.id.day_label)
         prevDayButton = findViewById(R.id.prev_day)
@@ -113,6 +117,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.button_week -> {
                     mode = Mode.WEEK
+                    weekOffset = 0
+                    pendingSelection = null
                     loadData()
                 }
                 R.id.button_custom -> pickCustomRange()
@@ -145,7 +151,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 Mode.WEEK -> {
-                    val monday = DateRange.ThisWeek.start
+                    val monday = DateRange.ThisWeek.start -
+                        weekOffset * 7L * DateRange.DAY_MS
                     val starts = LongArray(7) { monday + it * DateRange.DAY_MS }
                     weekDayStarts = starts
                     weekLists = withContext(Dispatchers.IO) {
@@ -153,22 +160,50 @@ class MainActivity : AppCompatActivity() {
                             repository.loadAppUsages(dayStart, dayStart + DateRange.DAY_MS)
                         }
                     }
-                    selectedDayIndex = todayIndexInWeek()
+                    selectedDayIndex =
+                        (pendingSelection ?: latestSelectableIndex())
+                            .coerceIn(0, latestSelectableIndex())
+                    pendingSelection = null
                 }
             }
             refreshDisplayedData()
         }
     }
 
-    private fun todayIndexInWeek(): Int {
+    /**
+     * Last day of the shown week the user may select: today in the current
+     * week, Sunday in any earlier week (no selecting days in the future).
+     */
+    private fun latestSelectableIndex(): Int {
         if (weekDayStarts.isEmpty()) return 0
         val today = DateRange.startOfToday()
         return ((today - weekDayStarts[0]) / DateRange.DAY_MS).toInt().coerceIn(0, 6)
     }
 
+    /**
+     * Moves the day selection, rolling into the neighbouring week when it
+     * runs off either end so the chevrons never dead-end mid-history.
+     */
     private fun selectDay(index: Int) {
-        selectedDayIndex = index.coerceIn(0, todayIndexInWeek())
-        refreshDisplayedData()
+        when {
+            index < 0 -> {
+                weekOffset += 1
+                pendingSelection = 6 // Sunday of the earlier week
+                loadData()
+            }
+            index > latestSelectableIndex() -> {
+                if (weekOffset > 0) {
+                    weekOffset -= 1
+                    pendingSelection = 0 // Monday of the later week
+                    loadData()
+                }
+                // Already at today: nothing newer to show.
+            }
+            else -> {
+                selectedDayIndex = index
+                refreshDisplayedData()
+            }
+        }
     }
 
     /** Re-applies filters to cached data and redraws totals, charts, list. */
@@ -192,6 +227,11 @@ class MainActivity : AppCompatActivity() {
 
             weekTotalView.text = totalText
             weekSubtitleView.text = relativeDayLabel(selectedDayIndex)
+            weekRangeView.text = getString(
+                R.string.range_between,
+                formatDay(0, "MMM d"),
+                formatDay(6, "MMM d")
+            )
             dayLabelView.text = formatDay(selectedDayIndex, "EEE, MMM d")
 
             val barValues = LongArray(7) { day ->
@@ -204,9 +244,11 @@ class MainActivity : AppCompatActivity() {
             }
             weekChart.setData(barValues, dayLabels, selectedDayIndex)
 
-            prevDayButton.isEnabled = selectedDayIndex > 0
-            nextDayButton.isEnabled = selectedDayIndex < todayIndexInWeek()
-            prevDayButton.alpha = if (prevDayButton.isEnabled) 1f else 0.3f
+            // Back is always possible; forward stops once we reach today.
+            prevDayButton.isEnabled = true
+            nextDayButton.isEnabled =
+                weekOffset > 0 || selectedDayIndex < latestSelectableIndex()
+            prevDayButton.alpha = 1f
             nextDayButton.alpha = if (nextDayButton.isEnabled) 1f else 0.3f
         } else {
             weekCard.visibility = View.GONE
@@ -230,10 +272,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun relativeDayLabel(index: Int): String {
-        val todayIndex = todayIndexInWeek()
-        return when (index) {
-            todayIndex -> getString(R.string.range_today)
-            todayIndex - 1 -> getString(R.string.yesterday)
+        val dayStart = weekDayStarts.getOrNull(index) ?: return ""
+        val today = DateRange.startOfToday()
+        return when (dayStart) {
+            today -> getString(R.string.range_today)
+            today - DateRange.DAY_MS -> getString(R.string.yesterday)
             else -> formatDay(index, "EEE, MMM d")
         }
     }
