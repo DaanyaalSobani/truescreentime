@@ -83,7 +83,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
         }
 
-        adapter = AppUsageAdapter(filterStore) { refreshDisplayedData() }
+        adapter = AppUsageAdapter(
+            filterStore,
+            onInclusionChanged = { refreshDisplayedData() },
+            onAppClicked = { app -> AppDetailActivity.launch(this, app) },
+        )
         val recycler = findViewById<RecyclerView>(R.id.app_list)
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.adapter = adapter

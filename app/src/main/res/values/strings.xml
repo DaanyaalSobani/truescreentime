@@ -13,6 +13,10 @@
     <string name="yesterday">Yesterday</string>
     <string name="prev_day">Previous day</string>
     <string name="next_day">Next day</string>
+    <string name="prev_week">Previous week</string>
+    <string name="next_week">Next week</string>
+    <string name="week_step_label">Week</string>
+    <string name="day_detail">%1$s: %2$s</string>
 
     <string name="range_button_today">Today</string>
     <string name="range_button_week">This Week</string>

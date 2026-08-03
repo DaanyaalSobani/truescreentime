@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 class AppUsageAdapter(
     private val filterStore: FilterStore,
     private val onInclusionChanged: () -> Unit,
+    private val onAppClicked: (AppUsage) -> Unit,
 ) : RecyclerView.Adapter<AppUsageAdapter.ViewHolder>() {
 
     private var items: List<AppUsage> = emptyList()
@@ -44,8 +45,10 @@ class AppUsageAdapter(
             filterStore.setIncluded(item.packageName, checked)
             onInclusionChanged()
         }
-        // Tapping anywhere on the row toggles inclusion too.
+        // Tapping anywhere on the row toggles inclusion too;
+        // tapping the icon opens the per-app weekly detail.
         holder.itemView.setOnClickListener { holder.include.toggle() }
+        holder.icon.setOnClickListener { onAppClicked(item) }
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
