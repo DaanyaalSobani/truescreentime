@@ -6,12 +6,15 @@ including/excluding individual apps.
 
 ## Screenshots
 
-<img src="screenshots/today-donut.png" width="320" alt="Today view: donut chart with per-app segments, the filtered total in the center, and the app list with include/exclude checkboxes below" />
+| Today view | Per-app weekly detail |
+|---|---|
+| <img src="screenshots/today-donut.png" width="300" alt="Today view: donut chart with per-app segments, the filtered total in the center, and the app list with include/exclude checkboxes below" /> | <img src="screenshots/app-week-detail.png" width="300" alt="Per-app detail: WhatsApp weekly bar chart with daily bars, a selected-day readout, and chevron buttons to change week" /> |
 
-*Today view — Digital-Wellbeing-style donut with the filtered total in the
-center. Unchecking an app (here WhatsApp) removes it from the chart and the
-total instantly. "This Week" switches to a weekly bar chart with a tappable
-day selector.*
+*Left: Digital-Wellbeing-style donut with the filtered total in the center —
+unchecking an app removes it from the chart and total instantly; "This Week"
+switches to a weekly bar chart with a tappable day selector. Right: tap any
+app's icon for its own weekly chart — tap a bar for that day's exact time,
+and step between weeks with the chevrons.*
 
 ## Features
 
