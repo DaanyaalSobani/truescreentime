@@ -25,6 +25,9 @@ including/excluding individual apps.
   filtered total in the center (Today/Custom), and a weekly bar chart with
   hour gridlines and a tappable day selector (This Week). Both are small
   custom `View`s — no chart library.
+- **Interactive donut** — tap a slice to read off that app's time;
+  double-tap the pooled **Other** slice to expand the long tail into its own
+  donut, and use the back button (or system back) to return.
 - **Date ranges** — Today, This Week (Monday-based), or a custom start/end
   date picked from calendar dialogs.
 - **Filterable app list** — every app with usage in the range is listed with

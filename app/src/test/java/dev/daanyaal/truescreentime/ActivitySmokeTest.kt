@@ -28,6 +28,8 @@ class ActivitySmokeTest {
         assertNotNull(activity.findViewById<View>(R.id.permission_container))
         assertNotNull(activity.findViewById<View>(R.id.content_container))
         assertNotNull(activity.findViewById<View>(R.id.donut_chart))
+        assertNotNull(activity.findViewById<View>(R.id.donut_detail))
+        assertNotNull(activity.findViewById<View>(R.id.donut_back))
         assertNotNull(activity.findViewById<View>(R.id.week_chart))
         assertNotNull(activity.findViewById<View>(R.id.week_range))
         assertNotNull(activity.findViewById<View>(R.id.show_system_apps))

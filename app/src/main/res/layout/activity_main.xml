@@ -172,11 +172,12 @@
 
             <!-- Donut card: the whole range (Today / Custom) or, in week
                  mode, whichever day is selected on the bar chart -->
-            <FrameLayout
+            <LinearLayout
                 android:id="@+id/donut_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
+                android:orientation="vertical"
                 android:background="@drawable/bg_card"
                 android:padding="12dp">
 
@@ -184,7 +185,27 @@
                     android:id="@+id/donut_chart"
                     android:layout_width="match_parent"
                     android:layout_height="300dp" />
-            </FrameLayout>
+
+                <TextView
+                    android:id="@+id/donut_detail"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:minHeight="24dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:text="@string/donut_hint" />
+
+                <Button
+                    android:id="@+id/donut_back"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/donut_back"
+                    android:visibility="gone" />
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"

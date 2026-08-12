@@ -10,6 +10,7 @@ import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -36,6 +37,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var contentContainer: View
     private lateinit var donutCard: View
     private lateinit var donutChart: DonutChartView
+    private lateinit var donutDetailView: TextView
+    private lateinit var donutBackButton: Button
     private lateinit var weekCard: View
     private lateinit var weekTotalView: TextView
     private lateinit var weekSubtitleView: TextView
@@ -52,6 +55,10 @@ class MainActivity : AppCompatActivity() {
     private var mode = Mode.TODAY
     private var customStart = 0L
     private var customEnd = 0L
+
+    private var donutDrilledIn = false
+    private var donutSlices: List<DonutSlice> = emptyList()
+    private lateinit var backCallback: OnBackPressedCallback
 
     private var rangeList: List<AppUsage> = emptyList()
     private var weekLists: List<List<AppUsage>> = emptyList()
@@ -71,6 +78,8 @@ class MainActivity : AppCompatActivity() {
         contentContainer = findViewById(R.id.content_container)
         donutCard = findViewById(R.id.donut_card)
         donutChart = findViewById(R.id.donut_chart)
+        donutDetailView = findViewById(R.id.donut_detail)
+        donutBackButton = findViewById(R.id.donut_back)
         weekCard = findViewById(R.id.week_card)
         weekTotalView = findViewById(R.id.week_total)
         weekSubtitleView = findViewById(R.id.week_subtitle)
@@ -125,6 +134,31 @@ class MainActivity : AppCompatActivity() {
             ExcludedAppsActivity.launch(this)
         }
 
+        donutChart.onSegmentTapped = { index ->
+            donutSlices.getOrNull(index)?.let { slice ->
+                donutDetailView.text = getString(
+                    R.string.slice_detail,
+                    slice.label,
+                    TimeFormat.format(this, slice.totalMs)
+                )
+                donutChart.setSelectedSegment(index)
+            }
+        }
+        donutChart.onSegmentDoubleTapped = { index ->
+            // Only the pooled tail can be opened up.
+            if (donutSlices.getOrNull(index)?.isOther == true) {
+                donutDrilledIn = true
+                donutChart.setSelectedSegment(-1)
+                refreshDisplayedData()
+            }
+        }
+        donutBackButton.setOnClickListener { exitDonutDrill() }
+        // While drilled in, system back returns to the full donut.
+        backCallback = object : OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() = exitDonutDrill()
+        }
+        onBackPressedDispatcher.addCallback(this, backCallback)
+
         weekChart.onDaySelected = { index -> selectDay(index) }
         prevDayButton.setOnClickListener { stepDay(-1) }
         nextDayButton.setOnClickListener { stepDay(1) }
@@ -159,6 +193,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadData() {
+        // New data invalidates any "Other" breakdown on screen.
+        donutDrilledIn = false
+        donutChart.setSelectedSegment(-1)
         loadJob?.cancel()
         loadJob = lifecycleScope.launch {
             when (mode) {
@@ -214,7 +251,14 @@ class MainActivity : AppCompatActivity() {
     private fun applyPosition(position: WeekPosition) {
         val weekChanged = position.weekOffset != weekPosition.weekOffset
         weekPosition = position
-        if (weekChanged) loadData() else refreshDisplayedData()
+        if (weekChanged) {
+            loadData()
+        } else {
+            // A different day means a different breakdown.
+            donutDrilledIn = false
+            donutChart.setSelectedSegment(-1)
+            refreshDisplayedData()
+        }
     }
 
     /** Re-applies filters to cached data and redraws totals, charts, list. */
@@ -284,15 +328,39 @@ class MainActivity : AppCompatActivity() {
 
     /** Top apps as donut segments, with the remainder folded into "Other". */
     private fun updateDonut(title: String, totalText: String, included: List<AppUsage>) {
-        val segments = mutableListOf<DonutChartView.Segment>()
-        for (app in included.take(4)) {
-            segments += DonutChartView.Segment(app.label, app.totalTimeMs)
+        // The tail can vanish as filters change; fall back to the full donut.
+        if (donutDrilledIn && !DonutSlices.hasOther(included)) donutDrilledIn = false
+
+        val slices = DonutSlices.build(included, getString(R.string.other), donutDrilledIn)
+        donutSlices = slices
+
+        val centerTitle = if (donutDrilledIn) getString(R.string.other) else title
+        val centerValue = if (donutDrilledIn) {
+            TimeFormat.format(this, slices.sumOf { it.totalMs })
+        } else {
+            totalText
         }
-        val otherMs = included.drop(4).sumOf { it.totalTimeMs }
-        if (otherMs > 0) {
-            segments += DonutChartView.Segment(getString(R.string.other), otherMs)
+        donutChart.setData(
+            slices.map { DonutChartView.Segment(it.label, it.totalMs) },
+            centerTitle,
+            centerValue,
+        )
+
+        donutBackButton.visibility = if (donutDrilledIn) View.VISIBLE else View.GONE
+        backCallback.isEnabled = donutDrilledIn
+        donutDetailView.text = when {
+            donutDrilledIn -> getString(R.string.donut_hint)
+            DonutSlices.hasOther(included) -> getString(R.string.donut_hint_other)
+            else -> getString(R.string.donut_hint)
         }
-        donutChart.setData(segments, title, totalText)
+    }
+
+    /** Leaves the "Other" breakdown and redraws the full donut. */
+    private fun exitDonutDrill() {
+        if (!donutDrilledIn) return
+        donutDrilledIn = false
+        donutChart.setSelectedSegment(-1)
+        refreshDisplayedData()
     }
 
     private fun relativeDayLabel(index: Int): String {

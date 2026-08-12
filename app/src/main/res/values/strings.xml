@@ -17,6 +17,10 @@
     <string name="restore_all">Restore all</string>
     <string name="no_usage_data">No usage data in this range</string>
     <string name="other">Other</string>
+    <string name="donut_hint">Tap a slice for its time</string>
+    <string name="donut_hint_other">Tap a slice for its time · double-tap Other to expand</string>
+    <string name="donut_back">Back to all apps</string>
+    <string name="slice_detail">%1$s: %2$s</string>
     <string name="yesterday">Yesterday</string>
     <string name="prev_day">Previous day</string>
     <string name="next_day">Next day</string>
