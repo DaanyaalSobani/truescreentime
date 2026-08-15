@@ -48,7 +48,10 @@ class ScorecardCryptoTest {
     fun `garbage keys and signatures are rejected without throwing`() {
         assertNull(ScorecardCrypto.decodePublicKey("not hex"))
         assertNull(ScorecardCrypto.decodePublicKey("AABB")) // right form, wrong length
-        assertNull(ScorecardCrypto.decodePublicKey("FF".repeat(64))) // not on the curve
+        assertNull(ScorecardCrypto.decodePublicKey("FF".repeat(64))) // outside the field
+        // A real point with one coordinate nudged is still off the curve.
+        val tampered = publicHex.dropLast(1) + if (publicHex.last() == '0') '1' else '0'
+        assertNull(ScorecardCrypto.decodePublicKey(tampered))
         assertFalse(ScorecardCrypto.verify("payload", "zzzz", publicHex))
         assertFalse(ScorecardCrypto.verify("payload", "AABB", publicHex))
     }

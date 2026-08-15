@@ -10,6 +10,7 @@ import java.security.PrivateKey
 import java.security.PublicKey
 import java.security.Signature
 import java.security.interfaces.ECPublicKey
+import java.security.spec.ECFieldFp
 import java.security.spec.ECGenParameterSpec
 import java.security.spec.ECParameterSpec
 import java.security.spec.ECPoint
@@ -29,6 +30,10 @@ object ScorecardCrypto {
     private const val KEY_ALGORITHM = "EC"
     private const val SIGNATURE_ALGORITHM = "SHA256withECDSA"
     private const val COORDINATE_BYTES = 32
+
+    // BigInteger.TWO is Java 9+; spell them out for the minSdk we support.
+    private val TWO: BigInteger = BigInteger.valueOf(2)
+    private val THREE: BigInteger = BigInteger.valueOf(3)
 
     fun generateKeyPair(): KeyPair = KeyPairGenerator.getInstance(KEY_ALGORITHM).apply {
         initialize(ECGenParameterSpec(CURVE))
@@ -68,13 +73,33 @@ object ScorecardCrypto {
         return try {
             val x = BigInteger(1, bytes.copyOfRange(0, COORDINATE_BYTES))
             val y = BigInteger(1, bytes.copyOfRange(COORDINATE_BYTES, bytes.size))
+            val parameters = curveParameters()
+            // KeyFactory happily accepts coordinates that are not on the
+            // curve, so check the curve equation ourselves before trusting
+            // anything signed against this key.
+            if (!isOnCurve(x, y, parameters)) return null
             KeyFactory.getInstance(KEY_ALGORITHM)
-                .generatePublic(ECPublicKeySpec(ECPoint(x, y), curveParameters()))
+                .generatePublic(ECPublicKeySpec(ECPoint(x, y), parameters))
         } catch (e: GeneralSecurityException) {
             null
         } catch (e: IllegalArgumentException) {
-            null // point is not on the curve
+            null
         }
+    }
+
+    /** y² ≡ x³ + ax + b (mod p), with both coordinates inside the field. */
+    private fun isOnCurve(x: BigInteger, y: BigInteger, parameters: ECParameterSpec): Boolean {
+        val curve = parameters.curve
+        val field = curve.field as? ECFieldFp ?: return false
+        val p = field.p
+        if (x.signum() < 0 || x >= p || y.signum() < 0 || y >= p) return false
+
+        val left = y.modPow(TWO, p)
+        val right = x.modPow(THREE, p)
+            .add(curve.a.multiply(x))
+            .add(curve.b)
+            .mod(p)
+        return left == right
     }
 
     private fun curveParameters(): ECParameterSpec =
