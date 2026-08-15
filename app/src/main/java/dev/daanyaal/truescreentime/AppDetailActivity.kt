@@ -24,7 +24,7 @@ import java.util.Locale
  */
 class AppDetailActivity : AppCompatActivity() {
 
-    private lateinit var repository: UsageStatsRepository
+    private lateinit var history: UsageHistory
     private lateinit var weekTotalView: TextView
     private lateinit var weekLabelView: TextView
     private lateinit var dayDetailView: TextView
@@ -41,7 +41,7 @@ class AppDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app_detail)
 
-        repository = UsageStatsRepository(this)
+        history = UsageHistory(this)
         targetPackage = intent.getStringExtra(EXTRA_PACKAGE) ?: run {
             finish()
             return
@@ -88,11 +88,10 @@ class AppDetailActivity : AppCompatActivity() {
 
         loadJob?.cancel()
         loadJob = lifecycleScope.launch {
+            val todayStart = DateRange.startOfToday()
             val values = withContext(Dispatchers.IO) {
                 LongArray(7) { day ->
-                    repository.queryForegroundTimes(
-                        starts[day], starts[day] + DateRange.DAY_MS
-                    )[pkg] ?: 0L
+                    history.dayUsageFor(pkg, starts[day], todayStart)
                 }
             }
 

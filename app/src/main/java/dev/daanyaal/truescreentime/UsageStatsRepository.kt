@@ -73,6 +73,13 @@ class UsageStatsRepository(private val context: Context) {
         return ForegroundSessionReplay.replay(projected, rangeStart, effectiveEnd)
     }
 
+    /** Current launcher icon for a package, or null if it is gone. */
+    fun iconFor(packageName: String): Drawable? = try {
+        context.packageManager.getApplicationIcon(packageName)
+    } catch (e: PackageManager.NameNotFoundException) {
+        null
+    }
+
     /** Resolves labels/icons and system-app status, sorted by time descending. */
     fun loadAppUsages(rangeStart: Long, rangeEnd: Long): List<AppUsage> {
         val pm = context.packageManager

@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
 
     private enum class Mode { TODAY, WEEK, CUSTOM }
 
-    private lateinit var repository: UsageStatsRepository
+    private lateinit var history: UsageHistory
     private lateinit var filterStore: FilterStore
     private lateinit var adapter: AppUsageAdapter
 
@@ -71,7 +71,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        repository = UsageStatsRepository(this)
+        history = UsageHistory(this)
         filterStore = FilterStore(this)
 
         permissionContainer = findViewById(R.id.permission_container)
@@ -186,10 +186,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        val granted = repository.hasUsageAccess()
+        val granted = history.hasUsageAccess()
         permissionContainer.visibility = if (granted) View.GONE else View.VISIBLE
         contentContainer.visibility = if (granted) View.VISIBLE else View.GONE
-        if (granted) loadData()
+        if (granted) {
+            // Capture whatever the OS still remembers before it drops it.
+            lifecycleScope.launch(Dispatchers.IO) {
+                history.archiveLiveWindow(DateRange.startOfToday())
+            }
+            loadData()
+        }
     }
 
     private fun loadData() {
@@ -198,17 +204,18 @@ class MainActivity : AppCompatActivity() {
         donutChart.setSelectedSegment(-1)
         loadJob?.cancel()
         loadJob = lifecycleScope.launch {
+            val todayStart = DateRange.startOfToday()
             when (mode) {
                 Mode.TODAY -> {
                     rangeList = withContext(Dispatchers.IO) {
-                        repository.loadAppUsages(DateRange.Today.start, DateRange.Today.end)
+                        history.dayUsage(todayStart, todayStart)
                     }
                 }
                 Mode.CUSTOM -> {
                     val start = customStart
                     val end = customEnd
                     rangeList = withContext(Dispatchers.IO) {
-                        repository.loadAppUsages(start, end)
+                        history.rangeUsage(start, end, todayStart)
                     }
                 }
                 Mode.WEEK -> {
@@ -217,9 +224,7 @@ class MainActivity : AppCompatActivity() {
                     )
                     weekDayStarts = starts
                     weekLists = withContext(Dispatchers.IO) {
-                        starts.map { dayStart ->
-                            repository.loadAppUsages(dayStart, dayStart + DateRange.DAY_MS)
-                        }
+                        starts.map { dayStart -> history.dayUsage(dayStart, todayStart) }
                     }
                 }
             }
