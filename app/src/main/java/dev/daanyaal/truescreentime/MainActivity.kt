@@ -133,6 +133,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.manage_excluded).setOnClickListener {
             ExcludedAppsActivity.launch(this)
         }
+        findViewById<Button>(R.id.open_competition).setOnClickListener {
+            CompetitionActivity.launch(this)
+        }
 
         donutChart.onSegmentTapped = { index ->
             donutSlices.getOrNull(index)?.let { slice ->

@@ -37,5 +37,9 @@
         <activity
             android:name=".ExcludedAppsActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".CompetitionActivity"
+            android:exported="false" />
     </application>
 </manifest>

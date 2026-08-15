@@ -23,8 +23,8 @@ class WeeklyBarChartView @JvmOverloads constructor(
 
     var onDaySelected: ((Int) -> Unit)? = null
 
-    private var values = LongArray(7)
-    private var labels: List<String> = List(7) { "" }
+    private var values = LongArray(0)
+    private var labels: List<String> = emptyList()
     private var selected = -1
 
     private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -38,9 +38,10 @@ class WeeklyBarChartView @JvmOverloads constructor(
         textAlign = Paint.Align.CENTER
     }
 
+    /** Any number of bars; labels are matched by position. */
     fun setData(values: LongArray, labels: List<String>, selected: Int) {
-        this.values = values.copyOf(7)
-        this.labels = List(7) { labels.getOrElse(it) { "" } }
+        this.values = values.copyOf()
+        this.labels = List(values.size) { labels.getOrElse(it) { "" } }
         this.selected = selected
         invalidate()
     }
@@ -51,8 +52,9 @@ class WeeklyBarChartView @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN -> return true
             MotionEvent.ACTION_UP -> {
                 val chartWidth = width - rightPad()
-                if (chartWidth > 0 && event.x in 0f..chartWidth) {
-                    val index = (event.x / (chartWidth / 7f)).toInt().coerceIn(0, 6)
+                if (values.isNotEmpty() && chartWidth > 0 && event.x in 0f..chartWidth) {
+                    val index = (event.x / (chartWidth / values.size))
+                        .toInt().coerceIn(0, values.lastIndex)
                     performClick()
                     onDaySelected?.invoke(index)
                 }
@@ -84,7 +86,7 @@ class WeeklyBarChartView @JvmOverloads constructor(
         val bottomPad = dp(26f)
         val chartWidth = width - rightPad()
         val chartHeight = height - topPad - bottomPad
-        if (chartWidth <= 0 || chartHeight <= 0) return
+        if (values.isEmpty() || chartWidth <= 0 || chartHeight <= 0) return
 
         // Grid: 2-hour steps by default, coarser once days get very long.
         val maxHours = ceil(values.max() / 3_600_000.0).toInt()
@@ -102,11 +104,13 @@ class WeeklyBarChartView @JvmOverloads constructor(
             h += step
         }
 
-        val column = chartWidth / 7f
+        val column = chartWidth / values.size
         val barWidth = column * 0.52f
         val corner = dp(6f)
         val baseline = topPad + chartHeight
-        for (i in 0 until 7) {
+        // Long periods cannot fit a label under every bar; thin them out.
+        val labelStride = if (values.size > 9) 2 else 1
+        for (i in values.indices) {
             val hours = values[i] / 3_600_000f
             val barHeight = max(
                 chartHeight * hours / gridMax,
@@ -117,7 +121,11 @@ class WeeklyBarChartView @JvmOverloads constructor(
             canvas.drawRoundRect(
                 left, baseline - barHeight, left + barWidth, baseline, corner, corner, barPaint
             )
-            canvas.drawText(labels[i], left + barWidth / 2f, baseline + dp(18f), dayTextPaint)
+            if (i % labelStride == 0 || i == selected) {
+                canvas.drawText(
+                    labels[i], left + barWidth / 2f, baseline + dp(18f), dayTextPaint
+                )
+            }
         }
     }
 

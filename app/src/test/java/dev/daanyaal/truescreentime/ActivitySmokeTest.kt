@@ -48,6 +48,19 @@ class ActivitySmokeTest {
     }
 
     @Test
+    fun `competition activity inflates and binds its views`() {
+        val activity = Robolectric.buildActivity(CompetitionActivity::class.java).setup().get()
+
+        assertNotNull(activity.findViewById<View>(R.id.competition_empty))
+        assertNotNull(activity.findViewById<View>(R.id.competition_group))
+        assertNotNull(activity.findViewById<View>(R.id.competition_chart))
+        assertNotNull(activity.findViewById<View>(R.id.create_group))
+        assertNotNull(activity.findViewById<View>(R.id.join_group))
+        assertNotNull(activity.findViewById<View>(R.id.share_code))
+        assertNotNull(activity.findViewById<View>(R.id.leave_group))
+    }
+
+    @Test
     fun `app detail activity inflates when launched with a package`() {
         val intent = Intent(
             ApplicationProvider.getApplicationContext(),
