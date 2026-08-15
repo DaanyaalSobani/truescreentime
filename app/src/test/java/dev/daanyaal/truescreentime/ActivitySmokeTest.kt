@@ -58,6 +58,10 @@ class ActivitySmokeTest {
         assertNotNull(activity.findViewById<View>(R.id.join_group))
         assertNotNull(activity.findViewById<View>(R.id.share_code))
         assertNotNull(activity.findViewById<View>(R.id.leave_group))
+        assertNotNull(activity.findViewById<View>(R.id.share_scorecard))
+        assertNotNull(activity.findViewById<View>(R.id.import_scorecard))
+        assertNotNull(activity.findViewById<View>(R.id.paste_scorecard))
+        assertNotNull(activity.findViewById<View>(R.id.leaderboard))
     }
 
     @Test
